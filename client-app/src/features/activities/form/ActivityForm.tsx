@@ -11,31 +11,19 @@ interface DetailParams {
 }
 
 const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
-  match
+  match, history
 }) => {
   const activityStore = useContext(ActivityStore);
   const {
     createActivity,
     editActivity,
     submitting,
-    cancelFormOpen,
     activity: initializeFormState,
     loadActivity,
     clearActivity
   } = activityStore;
 
-  useEffect(() => {
-    if (match.params.id) {
-      loadActivity(match.params.id).then(
-        () => initializeFormState && setActivity(initializeFormState));
-    }
-
-    return () => {
-      clearActivity();
-    }
-  },[loadActivity,clearActivity,match.params.id,initializeFormState]);
-
-  const [activity, setActivity] = useState<IActivity>({
+    const [activity, setActivity] = useState<IActivity>({
     id: "",
     title: "",
     category: "",
@@ -45,6 +33,17 @@ const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
     venue: ""
   });
 
+  useEffect(() => {
+    if (match.params.id && activity.id.length === 0) {
+      loadActivity(match.params.id).then(
+        () => initializeFormState && setActivity(initializeFormState));
+    }
+
+    return () => {
+      clearActivity();
+    }
+  },[loadActivity,clearActivity,match.params.id,initializeFormState, activity.id.length]);
+
   const handleSubmit = () => {
     console.log(activity);
     if (activity.id.length === 0) {
@@ -52,9 +51,9 @@ const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
         ...activity,
         id: uuid()
       };
-      createActivity(newActivity);
+      createActivity(newActivity).then(() => history.push(`/activities/${newActivity.id}`));
     } else {
-      editActivity(activity);
+      editActivity(activity).then(() => history.push(`/activities/${activity.id}`));
     }
   };
 
@@ -114,7 +113,7 @@ const ActivityForm: React.FC<RouteComponentProps<DetailParams>> = ({
           content="Submit"
         />
         <Button
-          onClick={cancelFormOpen}
+          onClick={() => history.push('/activities')}
           floated="right"
           type="button"
           content="Cancel"
